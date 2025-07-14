@@ -25,6 +25,7 @@ func main() {
 
 	// 20250714T114955 TODO: change to prod once ready
 	testWs := "15032"
+	// testWsProd := "38099"
 	// fbUrl := "https://guidestar-multiconfig.firebaseio.com"
 	// opt := option.WithCredentialsFile("config/guidestar-multiconfig-firebase-adminsdk-pzpvm-0fcc9de3b9.json")
 	fbUrl := "https://guidestar-stage.firebaseio.com"
