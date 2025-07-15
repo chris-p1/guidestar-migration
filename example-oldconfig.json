@@ -1,0 +1,28 @@
+{
+  "settings": {
+    "-OVDl7tEoFrCwlWBIYmd": {
+      "loggingField509a": 6393124,
+      "loggingFieldEin": 6393126,
+      "loggingFieldLookupDate": 6393128,
+      "loggingFieldPub78": 6393130,
+      "loggingFieldRulingDate": 6393127,
+      "loggingFieldSubsectionDesc": 6393129,
+      "loggingFormId": 350770,
+      "name": "Test 1",
+      "targetFieldId": 6393123,
+      "targetFormId": 350769
+    },
+    "-OVDoAItu1cCclTbm9Ht": {
+      "loggingField509a": 6393153,
+      "loggingFieldEin": 6393158,
+      "loggingFieldLookupDate": 6393155,
+      "loggingFieldPub78": 6393157,
+      "loggingFieldRulingDate": 6393154,
+      "loggingFieldSubsectionDesc": 6393156,
+      "loggingFormId": 350773,
+      "name": "Test 2",
+      "targetFieldId": 6393151,
+      "targetFormId": 350772
+    }
+  }
+}
