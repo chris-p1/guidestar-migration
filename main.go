@@ -20,13 +20,36 @@ import (
 	"google.golang.org/api/option"
 )
 
-type configId string
-
-type wsConfig struct {
-	Settings map[string]Config `json:"settings"`
+type NewFormFields struct {
+	LoggingField509A           string `json:"loggingField509a"`
+	LoggingFieldLookupDate     string `json:"loggingFieldLookupDate"`
+	LoggingFieldPub78          string `json:"loggingFieldPub78"`
+	LoggingFieldRulingDate     string `json:"loggingFieldRulingDate"`
+	LoggingFieldSubsectionDesc string `json:"loggingFieldSubsectionDesc"`
 }
 
-type Config struct {
+type NewConfigFields struct {
+	Enabled                    bool   `json:"enabled"`
+	LoggingField509A           string `json:"loggingField509a,omitempty"`
+	LoggingFieldLookupDate     string `json:"loggingFieldLookupDate,omitempty"`
+	LoggingFieldPub78          string `json:"loggingFieldPub78,omitempty"`
+	LoggingFieldRulingDate     string `json:"loggingFieldRulingDate,omitempty"`
+	LoggingFieldSubsectionDesc string `json:"loggingFieldSubsectionDesc,omitempty"`
+	LoggingFormEnabled         bool   `json:"loggingFormEnabled,omitempty"`
+	LoggingFormID              int    `json:"loggingFormId,omitempty"`
+	LoggingLinkedFormID        string `json:"loggingLinkedFormId,omitempty"`
+	Mch1                       Mch1   `json:"mch1"`
+	Name                       string `json:"name"`
+	TargetFieldID              int    `json:"targetFieldId"`
+	TargetFormID               int    `json:"targetFormId"`
+}
+
+type Mch1 struct {
+	Type  string `json:"type,omitempty"`
+	Value string `json:"value,omitempty"`
+}
+
+type OldConfigFields struct {
 	LoggingField509A           int    `json:"loggingField509a"`
 	LoggingFieldEin            int    `json:"loggingFieldEin"`
 	LoggingFieldLookupDate     int    `json:"loggingFieldLookupDate"`
@@ -39,13 +62,54 @@ type Config struct {
 	TargetFormID               int    `json:"targetFormId"`
 }
 
-func migrate(config wsConfig) wsConfig {
+type OldConfig struct {
+	Settings map[string]OldConfigFields `json:"settings"`
+}
+
+type NewConfig struct {
+	Forms    map[string]NewFormFields   `json:"forms"`
+	Settings map[string]NewConfigFields `json:"settings"`
+}
+
+func migrate(oldConfig OldConfig) (NewConfig, error) {
 	// var newConfig map[string]interface{}
-	settings := config.Settings
-	for configId, configVals := range settings {
-		fmt.Printf("Key: %s, Value: %s\n", configId, configVals.Name)
+	newConf := NewConfig{
+		Forms:    make(map[string]NewFormFields),
+		Settings: make(map[string]NewConfigFields),
 	}
-	return config
+	oldSettings := oldConfig.Settings
+
+	for configId := range oldSettings {
+
+		fmt.Printf("Key: %s\nValue: %#v\n", configId, oldSettings[configId])
+
+		newConf.Settings[configId] = NewConfigFields{
+			Enabled:                    true,
+			LoggingField509A:           fmt.Sprint(oldSettings[configId].LoggingField509A),
+			LoggingFieldLookupDate:     fmt.Sprint(oldSettings[configId].LoggingFieldLookupDate),
+			LoggingFieldPub78:          fmt.Sprint(oldSettings[configId].LoggingFieldPub78),
+			LoggingFieldRulingDate:     fmt.Sprint(oldSettings[configId].LoggingFieldRulingDate),
+			LoggingFieldSubsectionDesc: fmt.Sprint(oldSettings[configId].LoggingFieldSubsectionDesc),
+			LoggingFormEnabled:         true,
+			LoggingFormID:              oldSettings[configId].LoggingFormID,
+			LoggingLinkedFormID:        fmt.Sprint(oldSettings[configId].LoggingFieldEin),
+			Mch1:                       Mch1{Type: "Logging", Value: "Yes"},
+			Name:                       oldSettings[configId].Name,
+			TargetFieldID:              oldSettings[configId].TargetFieldID,
+			TargetFormID:               oldSettings[configId].TargetFormID,
+		}
+
+		logFormId := fmt.Sprint(oldSettings[configId].LoggingFormID)
+
+		newConf.Forms[logFormId] = NewFormFields{
+			LoggingField509A:           fmt.Sprint(oldSettings[configId].LoggingField509A),
+			LoggingFieldLookupDate:     fmt.Sprint(oldSettings[configId].LoggingFieldLookupDate),
+			LoggingFieldPub78:          fmt.Sprint(oldSettings[configId].LoggingFieldPub78),
+			LoggingFieldRulingDate:     fmt.Sprint(oldSettings[configId].LoggingFieldRulingDate),
+			LoggingFieldSubsectionDesc: fmt.Sprint(oldSettings[configId].LoggingFieldSubsectionDesc),
+		}
+	}
+	return newConf, nil
 }
 
 func main() {
@@ -74,14 +138,17 @@ func main() {
 		log.Fatalln("Error initializing database client:", err)
 	}
 
-	var oldConfig wsConfig
+	var oldConfig OldConfig
 	oldRef := client.NewRef(testWs)
 	oldRef.Get(ctx, &oldConfig)
 	if err != nil {
 		log.Fatalln("Error reading from database:", err)
 	}
 
-	newConfig := migrate(oldConfig)
+	newConfig, err := migrate(oldConfig)
+	if err != nil {
+		log.Fatalln("Failed to convert old plugin config to new", err)
+	}
 	// updatedRef := client.NewRef(testWs2)
 	// var updatedConfig map[string]interface{}
 
@@ -90,9 +157,11 @@ func main() {
 	// 	log.Fatalln("Error reading from database:", err)
 	// }
 
-	oldTest, _ := json.MarshalIndent(newConfig, "", "  ")
+	oldTest, _ := json.MarshalIndent(oldConfig, "", "  ")
+	newTest, _ := json.MarshalIndent(newConfig, "", "  ")
 	// updatedTest, _ := json.MarshalIndent(updatedConfig, "", "  ")
-	fmt.Println(string(oldTest))
+	fmt.Println("Old: ", string(oldTest))
+	fmt.Println("New: ", string(newTest))
 	// fmt.Println(string(updatedTest))
 
 }

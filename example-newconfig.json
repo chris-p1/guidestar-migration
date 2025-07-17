@@ -1,0 +1,37 @@
+{
+  "forms": {
+    "350783": {
+      "loggingField509a": "6393362",
+      "loggingFieldLookupDate": "6393361",
+      "loggingFieldPub78": "6393363",
+      "loggingFieldRulingDate": "6393360",
+      "loggingFieldSubsectionDesc": "6393364"
+    }
+  },
+  "settings": {
+    "-OVDrgb02B732gG2W4NH": {
+      "enabled": false,
+      "loggingField509a": "6393362",
+      "loggingFieldLookupDate": "6393361",
+      "loggingFieldPub78": "6393363",
+      "loggingFieldRulingDate": "6393360",
+      "loggingFieldSubsectionDesc": "6393364",
+      "loggingFormEnabled": true,
+      "loggingFormId": 350783,
+      "loggingLinkedFormId": "6393365",
+      "mch1": {
+        "type": "Logging",
+        "value": "Yes"
+      },
+      "name": "Test 1",
+      "targetFieldId": 6393265,
+      "targetFormId": 350779
+    },
+    "-OVDtuHGqzmth1B087Nh": {
+      "enabled": false,
+      "name": "Guidestar Test 2 No log",
+      "targetFieldId": 6393378,
+      "targetFormId": 350785
+    }
+  }
+}
