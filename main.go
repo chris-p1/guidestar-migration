@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 
 	firebase "firebase.google.com/go/v4"
 	"golang.org/x/example/hello/reverse"
@@ -27,10 +28,22 @@ type FormFields struct {
 	LoggingFieldSubsectionDesc string `json:"loggingFieldSubsectionDesc"`
 }
 
-type ConfigFields struct {
-	Enabled                    bool   `json:"enabled,omitempty"`
+type OldConfigFields struct {
+	LoggingField509A           int    `json:"loggingField509a"`
+	LoggingFieldEin            int    `json:"loggingFieldEin"`
+	LoggingFieldLookupDate     int    `json:"loggingFieldLookupDate"`
+	LoggingFieldPub78          int    `json:"loggingFieldPub78"`
+	LoggingFieldRulingDate     int    `json:"loggingFieldRulingDate"`
+	LoggingFieldSubsectionDesc int    `json:"loggingFieldSubsectionDesc"`
+	LoggingFormID              int    `json:"loggingFormId"`
+	Name                       string `json:"name"`
+	TargetFieldID              int    `json:"targetFieldId"`
+	TargetFormID               int    `json:"targetFormId"`
+}
+
+type NewConfigFields struct {
+	Enabled                    bool   `json:"enabled"`
 	LoggingField509A           string `json:"loggingField509a,omitempty"`
-	LoggingFieldEin            int    `json:"loggingFieldEin,omitempty"`
 	LoggingFieldLookupDate     string `json:"loggingFieldLookupDate,omitempty"`
 	LoggingFieldPub78          string `json:"loggingFieldPub78,omitempty"`
 	LoggingFieldRulingDate     string `json:"loggingFieldRulingDate,omitempty"`
@@ -50,88 +63,58 @@ type Mch1 struct {
 }
 
 type Config struct {
-	Forms    map[string]FormFields   `json:"forms,omitempty"`
-	Settings map[string]ConfigFields `json:"settings,omitempty"`
+	Forms    map[string]FormFields  `json:"forms,omitempty"`
+	Settings map[string]interface{} `json:"settings"`
 }
 
 type Firebase map[string]Config
 
-func migrate(oldConfig Config) (Config, error) {
-	// var newConfig map[string]interface{}
-	newConf := Config{
-		Forms:    make(map[string]FormFields),
-		Settings: make(map[string]ConfigFields),
-	}
-	oldSettings := oldConfig.Settings
+func convert(oldFields map[string]OldConfigFields) Config {
 
-	for configId := range oldSettings {
+	newConf := Config{}
+	newFormFields := map[string]FormFields{}
+	newSettings := make(map[string]interface{})
 
-		fmt.Printf("Key: %s\nValue: %#v\n", configId, oldSettings[configId])
+	for k, v := range oldFields {
 
-		newConf.Settings[configId] = ConfigFields{
+		formId := fmt.Sprint(oldFields[k].LoggingFormID)
+		newFormFields[formId] = FormFields{
+			LoggingField509A:           fmt.Sprint(v.LoggingField509A),
+			LoggingFieldLookupDate:     fmt.Sprint(v.LoggingFieldLookupDate),
+			LoggingFieldPub78:          fmt.Sprint(v.LoggingFieldPub78),
+			LoggingFieldRulingDate:     fmt.Sprint(v.LoggingFieldRulingDate),
+			LoggingFieldSubsectionDesc: fmt.Sprint(v.LoggingFieldSubsectionDesc),
+		}
+
+		newSettings[k] = NewConfigFields{
 			Enabled:                    true,
-			LoggingField509A:           fmt.Sprint(oldSettings[configId].LoggingField509A),
-			LoggingFieldLookupDate:     fmt.Sprint(oldSettings[configId].LoggingFieldLookupDate),
-			LoggingFieldPub78:          fmt.Sprint(oldSettings[configId].LoggingFieldPub78),
-			LoggingFieldRulingDate:     fmt.Sprint(oldSettings[configId].LoggingFieldRulingDate),
-			LoggingFieldSubsectionDesc: fmt.Sprint(oldSettings[configId].LoggingFieldSubsectionDesc),
+			LoggingField509A:           fmt.Sprint(v.LoggingField509A),
+			LoggingFieldLookupDate:     fmt.Sprint(v.LoggingFieldLookupDate),
+			LoggingFieldPub78:          fmt.Sprint(v.LoggingFieldPub78),
+			LoggingFieldRulingDate:     fmt.Sprint(v.LoggingFieldRulingDate),
+			LoggingFieldSubsectionDesc: fmt.Sprint(v.LoggingFieldSubsectionDesc),
 			LoggingFormEnabled:         true,
-			LoggingFormID:              oldSettings[configId].LoggingFormID,
-			LoggingLinkedFormID:        fmt.Sprint(oldSettings[configId].LoggingFieldEin),
+			LoggingLinkedFormID:        fmt.Sprint(v.LoggingFieldEin),
+			LoggingFormID:              v.LoggingFormID,
 			Mch1:                       Mch1{Type: "Logging", Value: "Yes"},
-			Name:                       oldSettings[configId].Name,
-			TargetFieldID:              oldSettings[configId].TargetFieldID,
-			TargetFormID:               oldSettings[configId].TargetFormID,
+			Name:                       v.Name,
+			TargetFieldID:              v.TargetFieldID,
+			TargetFormID:               v.TargetFormID,
 		}
 
-		logFormId := fmt.Sprint(oldSettings[configId].LoggingFormID)
-
-		newConf.Forms[logFormId] = FormFields{
-			LoggingField509A:           oldSettings[configId].LoggingField509A,
-			LoggingFieldLookupDate:     oldSettings[configId].LoggingFieldLookupDate,
-			LoggingFieldPub78:          oldSettings[configId].LoggingFieldPub78,
-			LoggingFieldRulingDate:     oldSettings[configId].LoggingFieldRulingDate,
-			LoggingFieldSubsectionDesc: oldSettings[configId].LoggingFieldSubsectionDesc,
-		}
 	}
+	newConf.Forms = newFormFields
+	newConf.Settings = newSettings
 
-	return newConf, nil
+	// fmt.Println(newConf)
+	return newConf
 }
-
-// func checkNewConf(newSettings *NewConfigFields, newForms *NewFormFields) {
-
-// }
 
 func main() {
 	fmt.Println(reverse.String("Guidestar Migration"))
 
-	// fileContent, err := os.Open("guidestar-multiconfig-export.json")
-	// if err != nil {
-	// 	log.Fatalf("Error reading JSON file: %v", err)
-	// }
-
-	// defer fileContent.Close()
-	// byteValue, _ := io.ReadAll(fileContent)
-	// var oldFb Firebase
-	// err = json.Unmarshal(byteValue, &oldFb)
-	// if err != nil {
-	// 	log.Fatalf("Error unmarshaling")
-	// }
-
-	// // fmt.Println(oldFb)
-	// // var newFb Firebase
-	// for wsId := range oldFb {
-	// 	fmt.Printf("Workspace: %s\n", wsId)
-	// 	fmt.Println(oldFb[wsId])
-	// }
-	// 20250714T114955 TODO: change to prod once ready
-	// testWs := "33940"
-	// // testWs2 := "40138"
-	// // testWsProd := "38099"
 	fbUrl := "https://guidestar-multiconfig.firebaseio.com"
 	opt := option.WithCredentialsFile("config/guidestar-multiconfig-firebase-adminsdk-pzpvm-0fcc9de3b9.json")
-	// // fbUrl := "https://guidestar-stage.firebaseio.com"
-	// opt := option.WithCredentialsFile("config/guidestar-stage-firebase-adminsdk-7j26g-c38da55334.json")
 	ctx := context.Background()
 	conf := &firebase.Config{
 		DatabaseURL: fbUrl,
@@ -147,30 +130,45 @@ func main() {
 		log.Fatalln("Error initializing database client:", err)
 	}
 
-	var oldConfig Firebase
-	oldRef := client.NewRef("")
-	oldRef.Get(ctx, &oldConfig)
+	newConfig := Firebase{}
+	var fbConfig Firebase
+	ref := client.NewRef("")
+	ref.Get(ctx, &fbConfig)
 	if err != nil {
 		log.Fatalln("Error reading from database:", err)
 	}
 
-	// newConfig, err := migrate(oldConfig)
-	if err != nil {
-		log.Fatalln("Failed to convert old plugin config to new", err)
+	for k := range fbConfig {
+
+		// only update old plugin settings
+		if len(fbConfig[k].Forms) == 0 {
+
+			var old map[string]OldConfigFields
+			buf, _ := json.Marshal(fbConfig[k].Settings)
+			if err := json.Unmarshal(buf, &old); err != nil {
+				log.Fatal(err)
+			}
+			wsConf := convert(old)
+			newConfig[k] = wsConf
+
+		} else {
+
+			newConfig[k] = fbConfig[k]
+		}
 	}
-	// updatedRef := client.NewRef(testWs2)
-	// var updatedConfig map[string]interface{}
+	oldTest, _ := json.MarshalIndent(fbConfig, "", "  ")
+	newTest, _ := json.MarshalIndent(newConfig, "", "  ")
 
-	// updatedRef.Get(ctx, &updatedConfig)
-	// if err != nil {
-	// 	log.Fatalln("Error reading from database:", err)
-	// }
-
-	oldTest, _ := json.MarshalIndent(oldConfig, "", "  ")
-	// newTest, _ := json.MarshalIndent(newConfig, "", "  ")
-	// updatedTest, _ := json.MarshalIndent(updatedConfig, "", "  ")
 	fmt.Println("Old: ", string(oldTest))
-	// fmt.Println("New: ", string(newTest))
-	// fmt.Println(string(updatedTest))
+	fmt.Println("New: ", string(newTest))
+
+	err = os.WriteFile("oldTest.json", oldTest, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = os.WriteFile("newTest.json", newTest, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 }
