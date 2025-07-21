@@ -1,1 +1,5 @@
 config/*.json
+data/*
+!data/example-newconfig.json
+!data/example-oldconfig.json
+
